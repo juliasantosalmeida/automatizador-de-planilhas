@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Analisador Morfológico Multi-Planilhas</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+      body {
+        font-family: 'Segoe UI', sans-serif;
+        background: #f0f2f5;
+        padding: 20px;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #1a73e8;
+        border-bottom: 2px solid #e8eaed;
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+      }
+
+      .config-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+      }
+
+      .mode-option {
+        margin: 12px 0;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      .mode-option input {
+        margin-right: 12px;
+        transform: scale(1.3);
+      }
+
+      .upload-section {
+        border: 2px dashed #1a73e8;
+        padding: 35px;
+        text-align: center;
+        border-radius: 8px;
+        background: #f1f7ff;
+        cursor: pointer;
+      }
+
+      .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background: white;
+      }
+
+      .results-table th {
+        background-color: #1a73e8;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        position: sticky;
+        top: 0;
+      }
+
+      .results-table td {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        font-size: 14px;
+      }
+
+      .results-table tr:hover {
+        background-color: #f1f7ff;
+      }
+
+      .row-media {
+        background-color: #e8f0fe !important;
+        font-weight: bold;
+        color: #1a73e8;
+        border-top: 2px solid #1a73e8;
+      }
+
+      .error {
+        color: #d93025;
+        background: #fce8e6;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        display: none;
+      }
+
+      .counter {
+        margin-bottom: 10px;
+        font-weight: bold;
+        color: #555;
+      }
+    </style>
+    <script type="text/javascript" src="./index.js" defer=""></script>
+    <link rel="stylesheet" href="./index.css">
+  </head>
+
+  <body>
+
+    <div class="container">
+      <h1>Analisador Morfológico (Lote)</h1>
+
+      <div class="config-section">
+        <strong>Modo de Processamento:</strong>
+        <label class="mode-option"><input type="radio" name="mode" value="1" checked=""> 1. Partículas (Maior Área + Médias)</label>
+        <label class="mode-option"><input type="radio" name="mode" value="2"> 2. Esqueleto (Branches/Junctions + Médias)</label>
+        <label class="mode-option"><input type="radio" name="mode" value="3"> 3. Soma de Comprimento (Total da Coluna B)</label>
+      </div>
+
+      <div class="upload-section" onclick="document.getElementById('fileInput').click()">
+        <p><strong>Clique para selecionar UM ou VÁRIOS arquivos (.csv, .xlsx)</strong></p>
+        <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" multiple="" style="display:none">
+      </div>
+
+      <div id="errorMessage" class="error"></div>
+
+      <div id="resultsArea" style="display:none; margin-top: 30px;">
+        <div class="counter" id="fileCounter">Arquivos processados: 0</div>
+        <table class="results-table" id="tableOutput">
+          <thead>
+            <tr id="tableHeader">
+              <th>Arquivo</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+          <tfoot id="tableFooter"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      document.getElementById('fileInput').addEventListener('change', handleFiles);
+
+      async function handleFiles(e) {
+        const files = e.target.files;
+        if (!files.length) return;
+
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const tableBody = document.getElementById('tableBody');
+        const tableHeader = document.getElementById('tableHeader');
+        const tableFooter = document.getElementById('tableFooter');
+        const fileCounter = document.getElementById('fileCounter');
+
+        tableBody.innerHTML = '';
+        tableFooter.innerHTML = '';
+        tableHeader.innerHTML = '<th>Arquivo</th>';
+        document.getElementById('resultsArea').style.display = 'block';
+        document.getElementById('errorMessage').style.display = 'none';
+
+        let processados = 0;
+        let colunasCriadas = false;
+        let listaChaves = [];
+        let acumuladorMedias = {};
+
+        for (let file of files) {
+          try {
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data, {
+              type: 'array'
+            });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(sheet);
+
+            if (json.length === 0) continue;
+
+            let resultado;
+            if (mode === "1") {
+              const colunasDesejadas = ['Area', 'Perim.', 'Circ.', 'Solidity'];
+              resultado = processarMaior(json, 'Area', colunasDesejadas);
+            } else if (mode === "2") {
+              // Verifica qual o nome exato da coluna de branches no arquivo
+              const colBranch = json[0].hasOwnProperty('# Branches') ? '# Branches' : 'Branches';
+              const colJunction = json[0].hasOwnProperty('# Junctions') ? '# Junctions' : 'Junctions';
+
+              const colunasDesejadas = [colBranch, colJunction];
+              resultado = processarMaior(json, colBranch, colunasDesejadas);
+            } else if (mode === "3") {
+              resultado = processarSomaColunaB(json);
+            }
+
+            if (!colunasCriadas) {
+              listaChaves = Object.keys(resultado);
+              listaChaves.forEach(key => {
+                const th = document.createElement('th');
+                th.innerText = key;
+                tableHeader.appendChild(th);
+                acumuladorMedias[key] = 0;
+              });
+              colunasCriadas = true;
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><b>${file.name}</b></td>`;
+
+            listaChaves.forEach(key => {
+              const val = resultado[key];
+              const numVal = parseNumeric(val);
+              acumuladorMedias[key] += numVal;
+
+              const td = document.createElement('td');
+              td.innerText = typeof numVal === 'number' ? numVal.toFixed(3) : val;
+              tr.appendChild(td);
+            });
+
+            tableBody.appendChild(tr);
+            processados++;
+            fileCounter.innerText = `Arquivos processados: ${processados}`;
+
+          } catch (err) {
+            console.error(err);
+            showError("Erro em " + file.name + ". Verifique se as colunas necessárias existem.");
+          }
+        }
+
+        // Exibe médias para Modo 1 e Modo 2
+        if (processados > 0 && (mode === "1" || mode === "2")) {
+          const trMedia = document.createElement('tr');
+          trMedia.className = 'row-media';
+          trMedia.innerHTML = `<td>MÉDIA GERAL</td>`;
+
+          listaChaves.forEach(key => {
+            const media = acumuladorMedias[key] / processados;
+            const td = document.createElement('td');
+            td.innerText = media.toFixed(3);
+            trMedia.appendChild(td);
+          });
+          tableFooter.appendChild(trMedia);
+        }
+
+        document.getElementById('fileInput').value = '';
+      }
+
+      function parseNumeric(val) {
+        if (typeof val === 'number') return val;
+        if (!val) return 0;
+        return parseFloat(String(val).replace(/\s/g, '').replace(',', '.')) || 0;
+      }
+
+      function processarMaior(dados, colunaAlvo, filtrarColunas = null) {
+        if (!dados[0].hasOwnProperty(colunaAlvo)) {
+          throw new Error(`Coluna ${colunaAlvo} não encontrada`);
+        }
+        const linhaMaior = dados.reduce((prev, curr) =>
+          (parseNumeric(curr[colunaAlvo]) > parseNumeric(prev[colunaAlvo])) ? curr : prev
+        );
+        if (!filtrarColunas) return linhaMaior;
+        let filtrado = {};
+        filtrarColunas.forEach(col => {
+          filtrado[col] = linhaMaior.hasOwnProperty(col) ? linhaMaior[col] : 0;
+        });
+        return filtrado;
+      }
+
+      function processarSomaColunaB(dados) {
+        const chaves = Object.keys(dados[0]);
+        const chaveColunaB = chaves[1];
+        if (!chaveColunaB) throw new Error("Coluna B não encontrada.");
+        const somaTotal = dados.reduce((acc, curr) => acc + parseNumeric(curr[chaveColunaB]), 0);
+        let resultado = {};
+        resultado[`Soma Total (${chaveColunaB})`] = somaTotal;
+        return resultado;
+      }
+
+      function showError(m) {
+        const e = document.getElementById('errorMessage');
+        e.innerText = m;
+        e.style.display = 'block';
+      }
+    </script>
+
+
+  </body>
+
+</html>
