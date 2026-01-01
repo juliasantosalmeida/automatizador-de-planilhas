@@ -120,11 +120,12 @@
         <strong>Modo de Processamento:</strong>
         <label class="mode-option"><input type="radio" name="mode" value="1" checked=""> 1. Partículas (Maior Área + Médias)</label>
         <label class="mode-option"><input type="radio" name="mode" value="2"> 2. Esqueleto (Branches/Junctions + Médias)</label>
-        <label class="mode-option"><input type="radio" name="mode" value="3"> 3. Soma de Comprimento (Total da Coluna B)</label>
+        <label class="mode-option"><input type="radio" name="mode" value="3"> 3. Soma de Comprimento (Total da Coluna B + Médias)</label>
       </div>
 
       <div class="upload-section" onclick="document.getElementById('fileInput').click()">
-        <p><strong>Clique para selecionar UM ou VÁRIOS arquivos (.csv, .xlsx)</strong></p>
+        <p><strong>Clique para selecionar a PASTA ou ARQUIVOS (.csv, .xlsx)</strong></p>
+        <p id="filterNotice" style="font-size: 0.9em; color: #666;">Modo atual: Processando todos os arquivos selecionados.</p>
         <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" multiple="" style="display:none">
       </div>
 
@@ -145,6 +146,20 @@
     </div>
 
     <script>
+      // Atualiza o aviso visual conforme o modo selecionado
+      document.querySelectorAll('input[name="mode"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          const notice = document.getElementById('filterNotice');
+          if (e.target.value === "3") {
+            notice.innerHTML = "<strong>Filtro Ativo:</strong> Apenas arquivos que começam com 'Branch information'.";
+            notice.style.color = "#d93025";
+          } else {
+            notice.innerText = "Modo atual: Processando todos os arquivos selecionados.";
+            notice.style.color = "#666";
+          }
+        });
+      });
+
       document.getElementById('fileInput').addEventListener('change', handleFiles);
 
       async function handleFiles(e) {
@@ -169,6 +184,12 @@
         let acumuladorMedias = {};
 
         for (let file of files) {
+          // --- FILTRO CONDICIONAL ---
+          // Se estiver no modo 3, aplica o filtro de nome. Nos outros modos, ignora o filtro.
+          if (mode === "3" && !file.name.toLowerCase().startsWith("branch information")) {
+            continue;
+          }
+
           try {
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(data, {
@@ -184,10 +205,8 @@
               const colunasDesejadas = ['Area', 'Perim.', 'Circ.', 'Solidity'];
               resultado = processarMaior(json, 'Area', colunasDesejadas);
             } else if (mode === "2") {
-              // Verifica qual o nome exato da coluna de branches no arquivo
               const colBranch = json[0].hasOwnProperty('# Branches') ? '# Branches' : 'Branches';
               const colJunction = json[0].hasOwnProperty('# Junctions') ? '# Junctions' : 'Junctions';
-
               const colunasDesejadas = [colBranch, colJunction];
               resultado = processarMaior(json, colBranch, colunasDesejadas);
             } else if (mode === "3") {
@@ -224,12 +243,12 @@
 
           } catch (err) {
             console.error(err);
-            showError("Erro em " + file.name + ". Verifique se as colunas necessárias existem.");
+            showError("Erro em " + file.name + ". Verifique se o arquivo possui as colunas necessárias.");
           }
         }
 
-        // Exibe médias para Modo 1 e Modo 2
-        if (processados > 0 && (mode === "1" || mode === "2")) {
+        // Médias para qualquer um dos modos
+        if (processados > 0) {
           const trMedia = document.createElement('tr');
           trMedia.className = 'row-media';
           trMedia.innerHTML = `<td>MÉDIA GERAL</td>`;
@@ -241,6 +260,8 @@
             trMedia.appendChild(td);
           });
           tableFooter.appendChild(trMedia);
+        } else {
+          showError("Nenhum arquivo válido encontrado para o modo selecionado.");
         }
 
         document.getElementById('fileInput').value = '';
@@ -271,9 +292,11 @@
         const chaves = Object.keys(dados[0]);
         const chaveColunaB = chaves[1];
         if (!chaveColunaB) throw new Error("Coluna B não encontrada.");
+
         const somaTotal = dados.reduce((acc, curr) => acc + parseNumeric(curr[chaveColunaB]), 0);
+
         let resultado = {};
-        resultado[`Soma Total (${chaveColunaB})`] = somaTotal;
+        resultado[`Soma Total (Col B)`] = somaTotal;
         return resultado;
       }
 
