@@ -1,313 +1,221 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 
-  <head>
-    <meta charset="UTF-8">
-    <title>Analisador Morfológico Multi-Planilhas</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-    <style>
-      body {
-        font-family: 'Segoe UI', sans-serif;
-        background: #f0f2f5;
-        padding: 20px;
-        color: #333;
-      }
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analisador Morfológico | Microglia AI</title>
 
-      .container {
-        max-width: 1200px;
-        margin: auto;
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      }
+  <!-- Modern Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="shortcut icon" href="assets/imagens/preview.svg" type="image/x-icon">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  <script type="text/javascript" src="./index.js" defer=""></script>
+  <link rel="stylesheet" href="./index.css">
+</head>
 
-      h1 {
-        color: #1a73e8;
-        border-bottom: 2px solid #e8eaed;
-        padding-bottom: 15px;
-        margin-bottom: 25px;
-      }
+<body>
 
-      .config-section {
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        border: 1px solid #dee2e6;
-      }
+  <div class="app-wrapper">
+    <!-- Header Section -->
+    <header class="app-header">
+      <div class="logo-container">
+        <!-- Abstract Cell/Microglia Icon -->
+        <svg class="app-logo" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+            stroke="url(#paint0_linear)" stroke-width="2" stroke-linecap="round" />
+          <path
+            d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z"
+            fill="url(#paint1_linear)" fill-opacity="0.5" />
+          <path d="M12 12V6M12 12L16.24 16.24M12 12L7.76 16.24" stroke="url(#paint2_linear)" stroke-width="2"
+            stroke-linecap="round" />
+          <defs>
+            <linearGradient id="paint0_linear" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FF9F4A" />
+              <stop offset="1" stop-color="#FF5D00" />
+            </linearGradient>
+            <linearGradient id="paint1_linear" x1="12" y1="8" x2="12" y2="16" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FF9F4A" />
+              <stop offset="1" stop-color="#FF5D00" />
+            </linearGradient>
+            <linearGradient id="paint2_linear" x1="12" y1="6" x2="12" y2="16.24" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FF9F4A" />
+              <stop offset="1" stop-color="#FF5D00" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="header-text">
+          <h1>Microglia Analytics</h1>
+          <span class="subtitle">Analisador Morfológico</span>
+        </div>
+      </div>
+    </header>
 
-      .mode-option {
-        margin: 12px 0;
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        font-weight: 500;
-      }
+    <main class="app-content">
 
-      .mode-option input {
-        margin-right: 12px;
-        transform: scale(1.3);
-      }
+      <!-- Configuration Section -->
+      <div class="card config-card">
+        <div class="card-header">
+          <div class="icon-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+          </div>
+          <h2>Modelo da Planilha:</h2>
+        </div>
 
-      .upload-section {
-        border: 2px dashed #1a73e8;
-        padding: 35px;
-        text-align: center;
-        border-radius: 8px;
-        background: #f1f7ff;
-        cursor: pointer;
-      }
+        <div class="options-grid">
+          <label class="mode-option-card">
+            <input type="radio" name="mode" value="1" checked="">
+            <div class="card-content">
+              <span class="check-circle"></span>
+              <div class="text-content">
+                <span class="mode-title">1. Partículas</span>
+                <span class="mode-desc">Maior Área + Médias</span>
+              </div>
+            </div>
+          </label>
 
-      .results-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        background: white;
-      }
+          <label class="mode-option-card">
+            <input type="radio" name="mode" value="2">
+            <div class="card-content">
+              <span class="check-circle"></span>
+              <div class="text-content">
+                <span class="mode-title">2. Esqueleto</span>
+                <span class="mode-desc">Branches/Junctions</span>
+              </div>
+            </div>
+          </label>
 
-      .results-table th {
-        background-color: #1a73e8;
-        color: white;
-        padding: 12px;
-        text-align: left;
-        position: sticky;
-        top: 0;
-      }
-
-      .results-table td {
-        padding: 10px;
-        border-bottom: 1px solid #ddd;
-        font-size: 14px;
-      }
-
-      .results-table tr:hover {
-        background-color: #f1f7ff;
-      }
-
-      .row-media {
-        background-color: #e8f0fe !important;
-        font-weight: bold;
-        color: #1a73e8;
-        border-top: 2px solid #1a73e8;
-      }
-
-      .error {
-        color: #d93025;
-        background: #fce8e6;
-        padding: 10px;
-        border-radius: 5px;
-        margin-top: 10px;
-        display: none;
-      }
-
-      .counter {
-        margin-bottom: 10px;
-        font-weight: bold;
-        color: #555;
-      }
-    </style>
-    <script type="text/javascript" src="./index.js" defer=""></script>
-    <link rel="stylesheet" href="./index.css">
-  </head>
-
-  <body>
-
-    <div class="container">
-      <h1>Analisador Morfológico (Lote)</h1>
-
-      <div class="config-section">
-        <strong>Modo de Processamento:</strong>
-        <label class="mode-option"><input type="radio" name="mode" value="1" checked=""> 1. Partículas (Maior Área + Médias)</label>
-        <label class="mode-option"><input type="radio" name="mode" value="2"> 2. Esqueleto (Branches/Junctions + Médias)</label>
-        <label class="mode-option"><input type="radio" name="mode" value="3"> 3. Soma de Comprimento (Total da Coluna B + Médias)</label>
+          <label class="mode-option-card">
+            <input type="radio" name="mode" value="3">
+            <div class="card-content">
+              <span class="check-circle"></span>
+              <div class="text-content">
+                <span class="mode-title">3. Soma (Col. B)</span>
+                <span class="mode-desc">Total + Médias</span>
+              </div>
+            </div>
+          </label>
+        </div>
       </div>
 
-      <div class="upload-section" onclick="document.getElementById('fileInput').click()">
-        <p><strong>Clique para selecionar a PASTA ou ARQUIVOS (.csv, .xlsx)</strong></p>
-        <p id="filterNotice" style="font-size: 0.9em; color: #666;">Modo atual: Processando todos os arquivos selecionados.</p>
-        <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" multiple="" style="display:none">
+      <!-- Upload Section -->
+      <div class="upload-section-wrapper">
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-content">
+            <div class="upload-icon-circle">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <h3>Carregar Arquivos</h3>
+            <p>.csv, .xlsx ou .xls</p>
+          </div>
+          <!-- Hidden input must remain for JS logic -->
+          <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" multiple="" style="display:none">
+        </div>
+
+        <p id="filterNotice" class="status-notice">
+          <span class="status-dot"></span>
+          Modo atual: Processando todos os arquivos selecionados.
+        </p>
       </div>
 
-      <div id="errorMessage" class="error"></div>
+      <div id="errorMessage" class="error-toast"></div>
 
-      <div id="resultsArea" style="display:none; margin-top: 30px;">
-        <div class="counter" id="fileCounter">Arquivos processados: 0</div>
-        <table class="results-table" id="tableOutput">
-          <thead>
-            <tr id="tableHeader">
-              <th>Arquivo</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-          <tfoot id="tableFooter"></tfoot>
-        </table>
+      <!-- Results Section -->
+      <div id="resultsArea" class="results-container" style="display:none;">
+        <div class="results-header">
+          <h3>Resultados da Análise</h3>
+          <div class="counter-badge" id="fileCounter">0 Arquivos</div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="results-table" id="tableOutput">
+            <thead>
+              <tr id="tableHeader">
+                <th>Arquivo</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+            <tfoot id="tableFooter"></tfoot>
+          </table>
+        </div>
       </div>
-    </div>
 
-    <script>
-      // Atualiza o aviso visual conforme o modo selecionado
-      document.querySelectorAll('input[name="mode"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-          const notice = document.getElementById('filterNotice');
-          if (e.target.value === "3") {
-            notice.innerHTML = "<strong>Filtro Ativo:</strong> Apenas arquivos que começam com 'Branch information'.";
-            notice.style.color = "#d93025";
-          } else {
-            notice.innerText = "Modo atual: Processando todos os arquivos selecionados.";
-            notice.style.color = "#666";
-          }
-        });
-      });
+      <!-- Pet Button -->
+      <!-- Pet Button -->
+      <button class="pet-btn" id="petBtn" title="Easter Egg dos Bichinhos">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="4" cy="11" r="2.5" />
+          <circle cx="9" cy="6" r="2.5" />
+          <circle cx="15" cy="6" r="2.5" />
+          <circle cx="20" cy="11" r="2.5" />
+          <path d="M12 11c-2.5 0-5 2-5 5 0 2 2 4 5 4s5-2 5-4c0-3-2.5-5-5-5z" />
+        </svg>
+      </button>
 
-      document.getElementById('fileInput').addEventListener('change', handleFiles);
+      <!-- Heart Button -->
+      <button class="heart-btn" id="heartBtn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+        </svg>
+      </button>
 
-      async function handleFiles(e) {
-        const files = e.target.files;
-        if (!files.length) return;
+      <!-- Love Modal -->
+      <div id="loveModal" class="modal-overlay">
+        <div class="modal-content love-theme">
+          <button class="close-modal" id="closeModal">&times;</button>
 
-        const mode = document.querySelector('input[name="mode"]:checked').value;
-        const tableBody = document.getElementById('tableBody');
-        const tableHeader = document.getElementById('tableHeader');
-        const tableFooter = document.getElementById('tableFooter');
-        const fileCounter = document.getElementById('fileCounter');
+          <h2 class="love-title">Para a minha xuxuzinha ❤️</h2>
 
-        tableBody.innerHTML = '';
-        tableFooter.innerHTML = '';
-        tableHeader.innerHTML = '<th>Arquivo</th>';
-        document.getElementById('resultsArea').style.display = 'block';
-        document.getElementById('errorMessage').style.display = 'none';
+          <div class="slider-container">
+            <div class="slider-wrapper" id="sliderWrapper">
+              <img src="./assets/imagens/IMG-20251026-WA0112.jpg" class="slide active">
+              <img src="./assets/imagens/IMG-20251225-WA0005.jpg" class="slide">
+              <img src="./assets/imagens/Picsart_25-10-26_10-44-41-896.jpg" class="slide">
+              <img src="./assets/imagens/Picsart_25-10-26_19-40-07-542.jpg" class="slide">
+              <img src="./assets/imagens/Screenshot_20250930_193302_TikTok.jpg" class="slide">
+            </div>
+            <button class="slider-btn prev" id="prevBtn">&#10094;</button>
+            <button class="slider-btn next" id="nextBtn">&#10095;</button>
+          </div>
 
-        let processados = 0;
-        let colunasCriadas = false;
-        let listaChaves = [];
-        let acumuladorMedias = {};
+          <p class="love-message">
+            Você é a pessoa mais incrível, inteligente, linda e engraçada que já conheci.
+          </p>
+          <p class="love-message love-bottom-msg">
+            Amo você meu bem :)
+          </p>
+        </div>
+      </div>
 
-        for (let file of files) {
-          // --- FILTRO CONDICIONAL ---
-          // Se estiver no modo 3, aplica o filtro de nome. Nos outros modos, ignora o filtro.
-          if (mode === "3" && !file.name.toLowerCase().startsWith("branch information")) {
-            continue;
-          }
+      <!-- Pet Easter Egg Overlay -->
+      <div id="petOverlay" class="pet-overlay">
+        <div class="pet-container mel-container">
+          <img src="./assets/imagens/mel.jpeg" class="pet-img mel" alt="Mel">
+          <div class="pet-bubble">oi titia</div>
+        </div>
+        <div class="pet-container joey-container">
+          <img src="./assets/imagens/joey.jpg" class="pet-img joey" alt="Joey">
+          <div class="pet-bubble">oi mamãe</div>
+        </div>
+      </div>
 
-          try {
-            const data = await file.arrayBuffer();
-            const workbook = XLSX.read(data, {
-              type: 'array'
-            });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(sheet);
+    </main>
+  </div>
 
-            if (json.length === 0) continue;
-
-            let resultado;
-            if (mode === "1") {
-              const colunasDesejadas = ['Area', 'Perim.', 'Circ.', 'Solidity'];
-              resultado = processarMaior(json, 'Area', colunasDesejadas);
-            } else if (mode === "2") {
-              const colBranch = json[0].hasOwnProperty('# Branches') ? '# Branches' : 'Branches';
-              const colJunction = json[0].hasOwnProperty('# Junctions') ? '# Junctions' : 'Junctions';
-              const colunasDesejadas = [colBranch, colJunction];
-              resultado = processarMaior(json, colBranch, colunasDesejadas);
-            } else if (mode === "3") {
-              resultado = processarSomaColunaB(json);
-            }
-
-            if (!colunasCriadas) {
-              listaChaves = Object.keys(resultado);
-              listaChaves.forEach(key => {
-                const th = document.createElement('th');
-                th.innerText = key;
-                tableHeader.appendChild(th);
-                acumuladorMedias[key] = 0;
-              });
-              colunasCriadas = true;
-            }
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td><b>${file.name}</b></td>`;
-
-            listaChaves.forEach(key => {
-              const val = resultado[key];
-              const numVal = parseNumeric(val);
-              acumuladorMedias[key] += numVal;
-
-              const td = document.createElement('td');
-              td.innerText = typeof numVal === 'number' ? numVal.toFixed(3) : val;
-              tr.appendChild(td);
-            });
-
-            tableBody.appendChild(tr);
-            processados++;
-            fileCounter.innerText = `Arquivos processados: ${processados}`;
-
-          } catch (err) {
-            console.error(err);
-            showError("Erro em " + file.name + ". Verifique se o arquivo possui as colunas necessárias.");
-          }
-        }
-
-        // Médias para qualquer um dos modos
-        if (processados > 0) {
-          const trMedia = document.createElement('tr');
-          trMedia.className = 'row-media';
-          trMedia.innerHTML = `<td>MÉDIA GERAL</td>`;
-
-          listaChaves.forEach(key => {
-            const media = acumuladorMedias[key] / processados;
-            const td = document.createElement('td');
-            td.innerText = media.toFixed(3);
-            trMedia.appendChild(td);
-          });
-          tableFooter.appendChild(trMedia);
-        } else {
-          showError("Nenhum arquivo válido encontrado para o modo selecionado.");
-        }
-
-        document.getElementById('fileInput').value = '';
-      }
-
-      function parseNumeric(val) {
-        if (typeof val === 'number') return val;
-        if (!val) return 0;
-        return parseFloat(String(val).replace(/\s/g, '').replace(',', '.')) || 0;
-      }
-
-      function processarMaior(dados, colunaAlvo, filtrarColunas = null) {
-        if (!dados[0].hasOwnProperty(colunaAlvo)) {
-          throw new Error(`Coluna ${colunaAlvo} não encontrada`);
-        }
-        const linhaMaior = dados.reduce((prev, curr) =>
-          (parseNumeric(curr[colunaAlvo]) > parseNumeric(prev[colunaAlvo])) ? curr : prev
-        );
-        if (!filtrarColunas) return linhaMaior;
-        let filtrado = {};
-        filtrarColunas.forEach(col => {
-          filtrado[col] = linhaMaior.hasOwnProperty(col) ? linhaMaior[col] : 0;
-        });
-        return filtrado;
-      }
-
-      function processarSomaColunaB(dados) {
-        const chaves = Object.keys(dados[0]);
-        const chaveColunaB = chaves[1];
-        if (!chaveColunaB) throw new Error("Coluna B não encontrada.");
-
-        const somaTotal = dados.reduce((acc, curr) => acc + parseNumeric(curr[chaveColunaB]), 0);
-
-        let resultado = {};
-        resultado[`Soma Total (Col B)`] = somaTotal;
-        return resultado;
-      }
-
-      function showError(m) {
-        const e = document.getElementById('errorMessage');
-        e.innerText = m;
-        e.style.display = 'block';
-      }
-    </script>
-
-
-  </body>
+</body>
 
 </html>
